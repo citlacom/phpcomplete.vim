@@ -209,9 +209,9 @@ function! phpcomplete#CompletePHP(findstart, base) " {{{
 
 	" If exists b:php_menu it means completion was already constructed we
 	" don't need to do anything more
-	"if exists("b:php_menu")
-	"    return b:php_menu
-	"endif
+	if exists("b:php_menu")
+		return b:php_menu
+	endif
 
 	if !exists('g:php_builtin_functions')
 		call phpcomplete#LoadData()
@@ -991,8 +991,16 @@ function! phpcomplete#JumpToDefinition(mode) " {{{
 	endif
 
 	let [symbol, symbol_context, symbol_namespace, current_imports] = phpcomplete#GetCurrentSymbolWithContext()
+	if symbol == ''
+		silent! exec notfound_commands.expand('<cword>')
+		return
+	endif
 
 	let [symbol_file, symbol_line, symbol_col] = phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, current_imports)
+	if symbol_file == ''
+		silent! exec notfound_commands.symbol
+		return
+	endif
 
 	let symbol_file_lines = readfile(symbol_file)
 	let tag_line = get(symbol_file_lines, symbol_line - 1, -1)
@@ -1114,14 +1122,15 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 				for classcontent in classcontents
 					if classcontent.content =~? 'function\_s\+&\=\<'.search_symbol.'\(\>\|$\)' && filereadable(classcontent.file)
 						" Method found in classlocation
-						call s:readfileToTmpbuffer(classcontent.file)
+						"call s:readfileToTmpbuffer(classcontent.file)
+						silent! e class_file
 
 						call search('\cclass\_s\+\<'.classcontent.class.'\(\>\|$\)', 'wc')
 						call search('\cfunction\_s\+&\=\zs\<'.search_symbol.'\(\>\|$\)', 'wc')
 
 						let line = line('.')
 						let col  = col('.')
-						silent! exe 'bw! %'
+						"silent! exe 'bw! %'
 						return [classcontent.file, line, col]
 					endif
 				endfor
@@ -1144,16 +1153,16 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 		endif
 
 		let class_file = phpcomplete#GetClassLocation(a:symbol, a:symbol_namespace)
-
+		echom printf("Found '%s' symbol of '%s' namespace definition at '%s' file.", a:symbol, a:symbol_namespace, class_file)
 		if class_file != '' && filereadable(class_file)
 			" Class or interface found in class_file
-			"call s:readfileToTmpbuffer(class_file)
-			silent! e class_file
+			call s:readfileToTmpbuffer(class_file)
 
 			call search('\c\(interface\|class\)\_s\+\zs\<'.search_symbol.'\(\>\|$\)', 'wc')
+
 			let line = line('.')
 			let col  = col('.')
-			"silent! exe 'bw! %'
+			silent! exe 'bw! %'
 			return [class_file, line, col]
 		endif
 	endif
@@ -1424,24 +1433,24 @@ endfunction
 
 function! phpcomplete#GetTaglist(pattern) " {{{
 	let cache_checksum = ''
-	"if g:phpcomplete_cache_taglists == 1
-	"    " build a string with  format of "<tagfile>:<mtime>$<tagfile2>:<mtime2>..."
-	"    " to validate that the tags are not changed since the time we saved the results in cache
-	"    for tagfile in sort(tagfiles())
-	"        let cache_checksum .= fnamemodify(tagfile, ':p').':'.getftime(tagfile).'$'
-	"    endfor
+	if g:phpcomplete_cache_taglists == 1
+		" build a string with  format of "<tagfile>:<mtime>$<tagfile2>:<mtime2>..."
+		" to validate that the tags are not changed since the time we saved the results in cache
+		for tagfile in sort(tagfiles())
+			let cache_checksum .= fnamemodify(tagfile, ':p').':'.getftime(tagfile).'$'
+		endfor
 
-	"    if s:cache_tags_checksum != cache_checksum
-	"        " tag file(s) changed
-	"        " since we don't know where individual tags coming from when calling taglist() we zap the whole cache
-	"        " no way to clear only the entries originating from the changed tag file
-	"        let s:cache_tags = {}
-	"    endif
+		if s:cache_tags_checksum != cache_checksum
+			" tag file(s) changed
+			" since we don't know where individual tags coming from when calling taglist() we zap the whole cache
+			" no way to clear only the entries originating from the changed tag file
+			let s:cache_tags = {}
+		endif
 
-	"    if has_key(s:cache_tags, a:pattern)
-	"        return s:cache_tags[a:pattern]
-	"    endif
-	"endif
+		if has_key(s:cache_tags, a:pattern)
+			return s:cache_tags[a:pattern]
+		endif
+	endif
 
 	let tags = taglist(a:pattern)
 	for tag in tags
