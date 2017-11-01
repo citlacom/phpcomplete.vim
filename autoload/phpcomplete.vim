@@ -1101,11 +1101,6 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 		let search_symbol = a:symbol
 	endif
 
-	echom "Symbol:"
-	echom a:symbol
-	echom "Symbol Context:"
-	echom a:symbol_context
-
 	" are we looking for a method?
 	if a:symbol_context =~ '\(->\|::\)$'
 		" Get name of the class
@@ -1121,17 +1116,14 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 			else
 				let namespace = '\'
 			endif
-			echom printf("Found '%s' class of '%s' namespace.", classname, namespace)
 			let classlocation = phpcomplete#GetClassLocation(classname, namespace)
 			echom printf("Found '%s' method symbol of '%s' namespace definition at '%s' file.", classname, namespace, classlocation)
-			echom printf("Searching the %s method.", search_symbol)
 			if classlocation != '' && filereadable(classlocation)
 				let classcontents = phpcomplete#GetCachedClassContents(classlocation, classname)
 				for classcontent in classcontents
 					if classcontent.content =~? 'function\_s\+&\=\<'.search_symbol.'\(\>\|$\)' && filereadable(classcontent.file)
 						" Method found in classlocation
 						"call s:readfileToTmpbuffer(classcontent.file)
-						echom printf("Opening '%s' file.", classcontent.file)
 						silent! e class_file.file
 
 						call search('\cclass\_s\+\<'.classcontent.class.'\(\>\|$\)', 'wc')
@@ -1140,7 +1132,6 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 						let line = line('.')
 						let col  = col('.')
 						"silent! exe 'bw! %'
-						echom classcontent.file
 						return [classcontent.file, line, col]
 					endif
 				endfor
@@ -1150,7 +1141,6 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 
 		" Could be a variable instance class.
 		if a:symbol =~ '^\$' && a:symbol_context == ''
-			echom "Searching a variable instance Class Name"
 			let symbol_context = a:symbol . '->'
 			let classname = phpcomplete#GetClassName(line('.'), symbol_context, a:symbol_namespace, a:current_imports)
 			if classname =~ '\'
@@ -1164,8 +1154,16 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 
 			let classlocation = phpcomplete#GetClassLocation(classname, namespace)
 			echom printf("Found '%s' instance class symbol of '%s' namespace definition at '%s' file.", classname, namespace, classlocation)
-			silent! e classlocation
-			return []
+			call search('\cclass\_s\+\<'.classname.'\(\>\|$\)', 'wc')
+
+			let line = line('.')
+			let col  = col('.')
+
+			if filereadable(classlocation)
+				execute " edit " . fnameescape(classlocation)
+			endif
+
+			return [classlocation, line, col]
 		endif
 
 		" it could be a function
@@ -1869,7 +1867,6 @@ function! phpcomplete#GetClassName(start_line, context, current_namespace, impor
 	let class_candidate_imports = a:imports
 	let methodstack = phpcomplete#GetMethodStack(a:context)
 
-	echom "Searching Class Name"
 	if a:context =~? '\$this->' || a:context =~? '\(self\|static\)::' || a:context =~? 'parent::'
 		let i = 1
 		while i < a:start_line
@@ -1936,7 +1933,6 @@ function! phpcomplete#GetClassName(start_line, context, current_namespace, impor
 		let object = methodstack[0]
 		let object_is_array = (object =~ '\v^[^[]+\[' ? 1 : 0)
 		let object = matchstr(object, variable_name_pattern)
-		echom "Searching classname candidate"
 		echom printf("%s - %s", object, variable_name_pattern)
 
 		let function_boundary = phpcomplete#GetCurrentFunctionBoundaries()
