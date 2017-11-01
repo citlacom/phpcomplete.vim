@@ -1117,6 +1117,7 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 				let namespace = '\'
 			endif
 			let classlocation = phpcomplete#GetClassLocation(classname, namespace)
+			echom printf("Found '%s' method symbol of '%s' namespace definition at '%s' file.", a:symbol, a:symbol_namespace, class_file)
 			if classlocation != '' && filereadable(classlocation)
 				let classcontents = phpcomplete#GetCachedClassContents(classlocation, classname)
 				for classcontent in classcontents
@@ -1140,29 +1141,32 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 
 		" it could be a function
 		let function_file = phpcomplete#GetFunctionLocation(a:symbol, a:symbol_namespace)
+		echom printf("Found '%s' function symbol of '%s' namespace definition at '%s' file.", a:symbol, a:symbol_namespace, class_file)
 		if function_file != '' && filereadable(function_file)
 			" Function found in function_file
-			call s:readfileToTmpbuffer(function_file)
+			"call s:readfileToTmpbuffer(function_file)
+			silent! e function_file
 
 			call search('\cfunction\_s\+&\=\zs\<'.search_symbol.'\(\>\|$\)', 'wc')
 
 			let line = line('.')
 			let col  = col('.')
-			silent! exe 'bw! %'
+			"silent! exe 'bw! %'
 			return [function_file, line, col]
 		endif
 
 		let class_file = phpcomplete#GetClassLocation(a:symbol, a:symbol_namespace)
-		echom printf("Found '%s' symbol of '%s' namespace definition at '%s' file.", a:symbol, a:symbol_namespace, class_file)
+		echom printf("Found '%s' class symbol of '%s' namespace definition at '%s' file.", a:symbol, a:symbol_namespace, class_file)
 		if class_file != '' && filereadable(class_file)
 			" Class or interface found in class_file
-			call s:readfileToTmpbuffer(class_file)
+			"call s:readfileToTmpbuffer(class_file)
+			silent! e class_file
 
 			call search('\c\(interface\|class\)\_s\+\zs\<'.search_symbol.'\(\>\|$\)', 'wc')
 
 			let line = line('.')
 			let col  = col('.')
-			silent! exe 'bw! %'
+			"silent! exe 'bw! %'
 			return [class_file, line, col]
 		endif
 	endif
