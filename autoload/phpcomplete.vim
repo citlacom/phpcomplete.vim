@@ -1117,7 +1117,7 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 				let namespace = '\'
 			endif
 			let classlocation = phpcomplete#GetClassLocation(classname, namespace)
-			echom printf("Found '%s' method symbol of '%s' namespace definition at '%s' file.", a:symbol, a:symbol_namespace, class_file)
+			echom printf("Found '%s' method symbol of '%s' namespace definition at '%s' file.", classname, namespace, classlocation)
 			if classlocation != '' && filereadable(classlocation)
 				let classcontents = phpcomplete#GetCachedClassContents(classlocation, classname)
 				for classcontent in classcontents
@@ -2464,7 +2464,7 @@ function! phpcomplete#GetClassContentsStructure(file_path, file_lines, class_nam
 		endif
 	endwhile
 
-	silent! bw! %
+	silent! q!
 
 	let [current_namespace, imports] = phpcomplete#GetCurrentNameSpace(a:file_lines[0:cfline])
 	" go back to original window
