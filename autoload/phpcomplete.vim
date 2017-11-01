@@ -213,12 +213,10 @@ function! phpcomplete#CompletePHP(findstart, base) " {{{
 	"    return b:php_menu
 	"endif
 
-	echom "LoadData"
 	if !exists('g:php_builtin_functions')
 		call phpcomplete#LoadData()
 	endif
 
-	echom "Complete Context"
 	" a:base is very short - we need context
 	if exists("b:compl_context")
 		let context = b:compl_context
@@ -231,7 +229,6 @@ function! phpcomplete#CompletePHP(findstart, base) " {{{
 		let context = ''
 	end
 
-	echom "Current Name Space"
 	try
 		let eventignore = &eventignore
 		let &eventignore = 'all'
@@ -240,8 +237,6 @@ function! phpcomplete#CompletePHP(findstart, base) " {{{
 
 		let [current_namespace, imports] = phpcomplete#GetCurrentNameSpace(getline(0, line('.')))
 
-		echom "Context:"
-		echom context
 		if context =~? '^use\s' || context ==? 'use'
 			return phpcomplete#CompleteUse(a:base)
 		endif
@@ -997,12 +992,7 @@ function! phpcomplete#JumpToDefinition(mode) " {{{
 
 	let [symbol, symbol_context, symbol_namespace, current_imports] = phpcomplete#GetCurrentSymbolWithContext()
 
-	echom "Locate Symbol"
 	let [symbol_file, symbol_line, symbol_col] = phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, current_imports)
-	echom "Symbol file, line, col:"
-	echom symbol_file
-	echom symbol_line
-	echom symbol_col
 
 	let symbol_file_lines = readfile(symbol_file)
 	let tag_line = get(symbol_file_lines, symbol_line - 1, -1)
@@ -1049,7 +1039,6 @@ function! phpcomplete#GetCurrentSymbolWithContext() " {{{
 	let phpend = searchpairpos('<?', '', '?>', 'Wn',
 			\ 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment"')
 
-	echom "We are in PHP"
 	if (phpbegin == [0, 0] && phpend == [0, 0])
 		return ['', '', '', '']
 	endif
@@ -1078,16 +1067,10 @@ function! phpcomplete#GetCurrentSymbolWithContext() " {{{
 	" function call
 	let word = substitute(word, '\v\c[^\\a-zA-Z_0-9$]*$', '', '')
 
-	echom "Find current instruction"
 	let current_instruction = phpcomplete#GetCurrentInstruction(line('.'), max([0, col('.') - 2]), phpbegin)
 	let context = substitute(current_instruction, '\s*[$a-zA-Z_0-9\x7f-\xff]*$', '', '')
-	echom current_instruction
-	echom context
 
-	echom "Get current NameSpace"
 	let [current_namespace, current_imports] = phpcomplete#GetCurrentNameSpace(getline(0, line('.')))
-	echom "Namespace & Imports"
-	echom current_namespace
 
 	" imports by definition always absolute so they don't need expanding with
 	" current namespace but with \ as if we are in the global namespace
@@ -1097,9 +1080,6 @@ function! phpcomplete#GetCurrentSymbolWithContext() " {{{
 		let [symbol, symbol_namespace] = phpcomplete#ExpandClassName(word, current_namespace, current_imports)
 	endif
 
-	echom "Symbol and Symbol Namespace"
-	echom symbol
-	echom symbol_namespace
 	return [symbol, context, symbol_namespace, current_imports]
 endfunction " }}}
 
@@ -1163,9 +1143,7 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 			return [function_file, line, col]
 		endif
 
-		echom "Class Location"
 		let class_file = phpcomplete#GetClassLocation(a:symbol, a:symbol_namespace)
-		echom class_file
 
 		if class_file != '' && filereadable(class_file)
 			" Class or interface found in class_file
@@ -2241,10 +2219,7 @@ function! phpcomplete#GetClassLocation(classname, namespace) " {{{
 
 	" Get class location from tags
 	let no_namespace_candidate = ''
-	echom "Get Tag List"
 	let tags = phpcomplete#GetTaglist('^'.a:classname.'$')
-	echom "Processing Tag Search"
-	echom a:classname
 	for tag in tags
 		" We'll allow interfaces and traits to be handled classes since you
 		" can't have colliding names with different kinds anyway
