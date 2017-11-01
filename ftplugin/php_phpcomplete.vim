@@ -36,11 +36,12 @@ set cpo&vim
 
 let g:phpcomplete_enhance_jump_to_definition = get(g:, 'phpcomplete_enhance_jump_to_definition', 1)
 let g:phpcomplete_mappings = extend({
-			\ 'jump_to_def': '<C-]>',
+			\ 'jump_to_def': ',d',
 			\ 'jump_to_def_split': '<C-W><C-]>',
 			\ 'jump_to_def_vsplit': '<C-W><C-\>',
 			\}, get(g:, 'phpcomplete_mappings', {}))
 
+echo g:phpcomplete_mappings
 if g:phpcomplete_enhance_jump_to_definition
 	if '' == mapcheck(g:phpcomplete_mappings['jump_to_def'])
 		silent! exe "nnoremap <silent> <unique> <buffer> ".g:phpcomplete_mappings['jump_to_def']." :<C-u>call phpcomplete#JumpToDefinition('normal')<CR>"

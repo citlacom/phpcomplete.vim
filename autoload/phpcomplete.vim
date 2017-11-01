@@ -209,14 +209,16 @@ function! phpcomplete#CompletePHP(findstart, base) " {{{
 
 	" If exists b:php_menu it means completion was already constructed we
 	" don't need to do anything more
-	if exists("b:php_menu")
-		return b:php_menu
-	endif
+	"if exists("b:php_menu")
+	"    return b:php_menu
+	"endif
 
+	echom "LoadData"
 	if !exists('g:php_builtin_functions')
 		call phpcomplete#LoadData()
 	endif
 
+	echom "Complete Context"
 	" a:base is very short - we need context
 	if exists("b:compl_context")
 		let context = b:compl_context
@@ -229,6 +231,7 @@ function! phpcomplete#CompletePHP(findstart, base) " {{{
 		let context = ''
 	end
 
+	echom "Current Name Space"
 	try
 		let eventignore = &eventignore
 		let &eventignore = 'all'
@@ -237,6 +240,8 @@ function! phpcomplete#CompletePHP(findstart, base) " {{{
 
 		let [current_namespace, imports] = phpcomplete#GetCurrentNameSpace(getline(0, line('.')))
 
+		echom "Context:"
+		echom context
 		if context =~? '^use\s' || context ==? 'use'
 			return phpcomplete#CompleteUse(a:base)
 		endif
@@ -991,16 +996,13 @@ function! phpcomplete#JumpToDefinition(mode) " {{{
 	endif
 
 	let [symbol, symbol_context, symbol_namespace, current_imports] = phpcomplete#GetCurrentSymbolWithContext()
-	if symbol == ''
-		silent! exec notfound_commands.expand('<cword>')
-		return
-	endif
 
+	echom "Locate Symbol"
 	let [symbol_file, symbol_line, symbol_col] = phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, current_imports)
-	if symbol_file == ''
-		silent! exec notfound_commands.symbol
-		return
-	endif
+	echom "Symbol file, line, col:"
+	echom symbol_file
+	echom symbol_line
+	echom symbol_col
 
 	let symbol_file_lines = readfile(symbol_file)
 	let tag_line = get(symbol_file_lines, symbol_line - 1, -1)
@@ -1047,6 +1049,7 @@ function! phpcomplete#GetCurrentSymbolWithContext() " {{{
 	let phpend = searchpairpos('<?', '', '?>', 'Wn',
 			\ 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment"')
 
+	echom "We are in PHP"
 	if (phpbegin == [0, 0] && phpend == [0, 0])
 		return ['', '', '', '']
 	endif
@@ -1075,10 +1078,16 @@ function! phpcomplete#GetCurrentSymbolWithContext() " {{{
 	" function call
 	let word = substitute(word, '\v\c[^\\a-zA-Z_0-9$]*$', '', '')
 
+	echom "Find current instruction"
 	let current_instruction = phpcomplete#GetCurrentInstruction(line('.'), max([0, col('.') - 2]), phpbegin)
 	let context = substitute(current_instruction, '\s*[$a-zA-Z_0-9\x7f-\xff]*$', '', '')
+	echom current_instruction
+	echom context
 
+	echom "Get current NameSpace"
 	let [current_namespace, current_imports] = phpcomplete#GetCurrentNameSpace(getline(0, line('.')))
+	echom "Namespace & Imports"
+	echom current_namespace
 
 	" imports by definition always absolute so they don't need expanding with
 	" current namespace but with \ as if we are in the global namespace
@@ -1088,6 +1097,9 @@ function! phpcomplete#GetCurrentSymbolWithContext() " {{{
 		let [symbol, symbol_namespace] = phpcomplete#ExpandClassName(word, current_namespace, current_imports)
 	endif
 
+	echom "Symbol and Symbol Namespace"
+	echom symbol
+	echom symbol_namespace
 	return [symbol, context, symbol_namespace, current_imports]
 endfunction " }}}
 
@@ -1151,16 +1163,19 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 			return [function_file, line, col]
 		endif
 
+		echom "Class Location"
 		let class_file = phpcomplete#GetClassLocation(a:symbol, a:symbol_namespace)
+		echom class_file
+
 		if class_file != '' && filereadable(class_file)
 			" Class or interface found in class_file
-			call s:readfileToTmpbuffer(class_file)
+			"call s:readfileToTmpbuffer(class_file)
+			silent! e class_file
 
 			call search('\c\(interface\|class\)\_s\+\zs\<'.search_symbol.'\(\>\|$\)', 'wc')
-
 			let line = line('.')
 			let col  = col('.')
-			silent! exe 'bw! %'
+			"silent! exe 'bw! %'
 			return [class_file, line, col]
 		endif
 	endif
@@ -1431,24 +1446,24 @@ endfunction
 
 function! phpcomplete#GetTaglist(pattern) " {{{
 	let cache_checksum = ''
-	if g:phpcomplete_cache_taglists == 1
-		" build a string with  format of "<tagfile>:<mtime>$<tagfile2>:<mtime2>..."
-		" to validate that the tags are not changed since the time we saved the results in cache
-		for tagfile in sort(tagfiles())
-			let cache_checksum .= fnamemodify(tagfile, ':p').':'.getftime(tagfile).'$'
-		endfor
+	"if g:phpcomplete_cache_taglists == 1
+	"    " build a string with  format of "<tagfile>:<mtime>$<tagfile2>:<mtime2>..."
+	"    " to validate that the tags are not changed since the time we saved the results in cache
+	"    for tagfile in sort(tagfiles())
+	"        let cache_checksum .= fnamemodify(tagfile, ':p').':'.getftime(tagfile).'$'
+	"    endfor
 
-		if s:cache_tags_checksum != cache_checksum
-			" tag file(s) changed
-			" since we don't know where individual tags coming from when calling taglist() we zap the whole cache
-			" no way to clear only the entries originating from the changed tag file
-			let s:cache_tags = {}
-		endif
+	"    if s:cache_tags_checksum != cache_checksum
+	"        " tag file(s) changed
+	"        " since we don't know where individual tags coming from when calling taglist() we zap the whole cache
+	"        " no way to clear only the entries originating from the changed tag file
+	"        let s:cache_tags = {}
+	"    endif
 
-		if has_key(s:cache_tags, a:pattern)
-			return s:cache_tags[a:pattern]
-		endif
-	endif
+	"    if has_key(s:cache_tags, a:pattern)
+	"        return s:cache_tags[a:pattern]
+	"    endif
+	"endif
 
 	let tags = taglist(a:pattern)
 	for tag in tags
@@ -2226,7 +2241,10 @@ function! phpcomplete#GetClassLocation(classname, namespace) " {{{
 
 	" Get class location from tags
 	let no_namespace_candidate = ''
+	echom "Get Tag List"
 	let tags = phpcomplete#GetTaglist('^'.a:classname.'$')
+	echom "Processing Tag Search"
+	echom a:classname
 	for tag in tags
 		" We'll allow interfaces and traits to be handled classes since you
 		" can't have colliding names with different kinds anyway
@@ -2852,7 +2870,7 @@ function! phpcomplete#GetCurrentNameSpace(file_lines) " {{{
 	" grab the remains
 	let file_lines = reverse(getline(1, line('.') - 1))
 
-	silent! bw! %
+	silent! q!
 	exe original_window.'wincmd w'
 
 	let namespace_name_pattern = '[a-zA-Z_\x7f-\xff\\][a-zA-Z_0-9\x7f-\xff\\]*'
