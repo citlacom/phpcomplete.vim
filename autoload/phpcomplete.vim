@@ -1933,7 +1933,6 @@ function! phpcomplete#GetClassName(start_line, context, current_namespace, impor
 		let object = methodstack[0]
 		let object_is_array = (object =~ '\v^[^[]+\[' ? 1 : 0)
 		let object = matchstr(object, variable_name_pattern)
-		echom printf("%s - %s", object, variable_name_pattern)
 
 		let function_boundary = phpcomplete#GetCurrentFunctionBoundaries()
 		let search_end_line = max([1, function_boundary[0][0]])
