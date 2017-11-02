@@ -990,6 +990,8 @@ function! phpcomplete#JumpToDefinition(mode) " {{{
 		let notfound_commands = 'vsplit | tag '
 	endif
 
+	echom printf("Using '%s' tagfiles.", join(tagfiles(), ','))
+
 	let [symbol, symbol_context, symbol_namespace, current_imports] = phpcomplete#GetCurrentSymbolWithContext()
 	if symbol == ''
 		silent! exec notfound_commands.expand('<cword>')
@@ -1108,6 +1110,8 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 		let search_symbol = a:symbol
 	endif
 
+	echom printf("Symbol '%s' - '%s' at '%s' namespace within context '%s'", a:symbol, search_symbol, a:symbol_namespace, a:symbol_context)
+
 	" are we looking for a method?
 	if a:symbol_context =~ '\(->\|::\)$'
 		" Get name of the class
@@ -1160,14 +1164,16 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 			endif
 		endif
 
-		" It could be a function.
-		let source_file = phpcomplete#GetFunctionLocation(a:symbol, a:symbol_namespace)
-		echom printf("Found '%s' function symbol of '%s' namespace definition at '%s' file.", a:symbol, a:symbol_namespace, source_file)
-		if source_file != ''
-			return [source_file, a:symbol]
+		" It could be a function when context and namespace is empty.
+		if a:symbol_context == '' && a:symbol_namespace == ''
+			let source_file = phpcomplete#GetFunctionLocation(a:symbol, a:symbol_namespace)
+			echom printf("Found '%s' function symbol of '%s' namespace definition at '%s' file.", a:symbol, a:symbol_namespace, source_file)
+			if source_file != ''
+				return [source_file, a:symbol]
+			endif
 		endif
 
-		" It could be a class or interface.
+		" Finally, it could be a class or interface.
 		let source_file = phpcomplete#GetClassLocation(a:symbol, a:symbol_namespace)
 		echom printf("Found '%s' class symbol of '%s' namespace definition at '%s' file.", a:symbol, a:symbol_namespace, source_file)
 		if source_file != ''
