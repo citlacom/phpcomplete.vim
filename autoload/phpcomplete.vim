@@ -996,43 +996,50 @@ function! phpcomplete#JumpToDefinition(mode) " {{{
 		return
 	endif
 
-	let [symbol_file, symbol_line, symbol_col] = phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, current_imports)
-	if symbol_file == ''
+	let [source_file, match_symbol] = phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, current_imports)
+	if source_file == ''
 		silent! exec notfound_commands.symbol
 		return
 	endif
 
-	let symbol_file_lines = readfile(symbol_file)
-	let tag_line = get(symbol_file_lines, symbol_line - 1, -1)
-	if tag_line == -1
-		silent! exec notfound_commands.symbol
+	let source_file_real = fnamemodify(source_file, ':p')
+	if !filereadable(source_file)
+		echom printf("Source file '%s' is not readable.", source_file)
 		return
 	endif
 
-	let tags = phpcomplete#GetTaglist(symbol)
+	echom printf("Found symbol file '%s'", source_file_real)
+	echom printf("Getting Tags for '%s' symbol.", match_symbol)
+	let tags = phpcomplete#GetTaglist(match_symbol)
+	"call prettyprint#echo(prettyprint#prettyprint(tags), 1, 1)
 
-	let symbol_file = fnamemodify(symbol_file, ':p')
 	let tag_position = -1
 	let i = 1
 	for tag in tags
-		if fnamemodify(tag.filename, ":p") == symbol_file && tag.cmd =~ tag_line
+		let tag_filename = fnamemodify(tag.filename, ":p")
+		echom printf("Tags loop at filename: %s", tag_filename)
+		"if tag_filename == source_file && tag.cmd =~ tag_line
+		if tag_filename == source_file_real
 			let tag_position = i
 			break
 		endif
 		let i += 1
 	endfor
 
+	echom printf("Tag '%s' found at position '%d'", match_symbol, tag_position)
 	if tag_position == -1
-		silent! exec notfound_commands.symbol
+		silent! exec notfound_commands.match_symbol
 	else
 		let oldcscopetag = &cscopetag
+		let gototag = tag_position.'tag '.match_symbol
+		echom printf("Go to Tag '%s'", gototag)
 		set nocscopetag
 		if a:mode == 'split'
-			silent! exec 'split | '.tag_position.'tag '.symbol
+			silent! exec 'split | gototag
 		elseif a:mode == 'vsplit'
-			silent! exec 'vsplit | '.tag_position.'tag '.symbol
+			silent! exec 'vsplit | gototag
 		elseif a:mode == 'normal'
-			silent! exec tag_position.'tag '.symbol
+			silent! exec gototag
 		endif
 		let &cscopetag = oldcscopetag
 		unlet oldcscopetag
@@ -1092,7 +1099,7 @@ function! phpcomplete#GetCurrentSymbolWithContext() " {{{
 endfunction " }}}
 
 function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, current_imports) " {{{
-	let unknow_location = ['', '', '']
+	let unknow_location = ['', '']
 
 	if a:symbol =~ '\\'
 		let symbol_parts = split(a:symbol, '\')
@@ -1116,30 +1123,24 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 			else
 				let namespace = '\'
 			endif
-			let classlocation = phpcomplete#GetClassLocation(classname, namespace)
-			echom printf("Found '%s' method symbol of '%s' namespace definition at '%s' file.", classname, namespace, classlocation)
-			if classlocation != '' && filereadable(classlocation)
-				let classcontents = phpcomplete#GetCachedClassContents(classlocation, classname)
+			let class_file = phpcomplete#Getclass_file(classname, namespace)
+			source_file = fnamemodify(fnameescape(class_file), ':p')
+			echom printf("Found '%s' method symbol of '%s' namespace definition at '%s' file.", classname, namespace, class_file)
+			if class_file != '' && filereadable(class_file)
+				let classcontents = phpcomplete#GetCachedClassContents(class_file, classname)
 				for classcontent in classcontents
-					if classcontent.content =~? 'function\_s\+&\=\<'.search_symbol.'\(\>\|$\)' && filereadable(classcontent.file)
-						" Method found in classlocation
-						"call s:readfileToTmpbuffer(classcontent.file)
-						silent! e class_file.file
-
-						call search('\cclass\_s\+\<'.classcontent.class.'\(\>\|$\)', 'wc')
-						call search('\cfunction\_s\+&\=\zs\<'.search_symbol.'\(\>\|$\)', 'wc')
-
-						let line = line('.')
-						let col  = col('.')
-						"silent! exe 'bw! %'
-						return [classcontent.file, line, col]
+					"call prettyprint#echo(prettyprint#prettyprint(classcontent), 1, 1)
+					echom printf("Searching method definition at '%s' classfile.", source_file)
+					if classcontent.content =~? 'function\_s\+&\=\<'.search_symbol.'\(\>\|$\)'
+						echom printf("Found method '%s' at '%s' classfile.", search_symbol, source_file)
+						return [source_file, search_symbol]
 					endif
 				endfor
 			endif
 		endif
 	else
 
-		" Could be a variable instance class.
+		" It could be a variable instance class.
 		if a:symbol =~ '^\$' && a:symbol_context == ''
 			let symbol_context = a:symbol . '->'
 			let classname = phpcomplete#GetClassName(line('.'), symbol_context, a:symbol_namespace, a:current_imports)
@@ -1152,49 +1153,25 @@ function! phpcomplete#LocateSymbol(symbol, symbol_context, symbol_namespace, cur
 				let namespace = '\'
 			endif
 
-			let classlocation = phpcomplete#GetClassLocation(classname, namespace)
-			echom printf("Found '%s' instance class symbol of '%s' namespace definition at '%s' file.", classname, namespace, classlocation)
-			call search('\cclass\_s\+\<'.classname.'\(\>\|$\)', 'wc')
-
-			let line = line('.')
-			let col  = col('.')
-
-			if filereadable(classlocation)
-				execute " edit " . fnameescape(classlocation)
+			let source_file = phpcomplete#GetClassLocation(classname, namespace)
+			echom printf("Found '%s' instance class symbol of '%s' namespace definition at '%s' file.", classname, namespace, source_file)
+			if source_file != ''
+				return [source_file, classname]
 			endif
-
-			return [classlocation, line, col]
 		endif
 
-		" it could be a function
-		let function_file = phpcomplete#GetFunctionLocation(a:symbol, a:symbol_namespace)
-		echom printf("Found '%s' function symbol of '%s' namespace definition at '%s' file.", a:symbol, a:symbol_namespace, function_file)
-		if function_file != '' && filereadable(function_file)
-			" Function found in function_file
-			"call s:readfileToTmpbuffer(function_file)
-			silent! e function_file
-
-			call search('\cfunction\_s\+&\=\zs\<'.search_symbol.'\(\>\|$\)', 'wc')
-
-			let line = line('.')
-			let col  = col('.')
-			"silent! exe 'bw! %'
-			return [function_file, line, col]
+		" It could be a function.
+		let source_file = phpcomplete#GetFunctionLocation(a:symbol, a:symbol_namespace)
+		echom printf("Found '%s' function symbol of '%s' namespace definition at '%s' file.", a:symbol, a:symbol_namespace, source_file)
+		if source_file != ''
+			return [source_file, a:symbol]
 		endif
 
-		let class_file = phpcomplete#GetClassLocation(a:symbol, a:symbol_namespace)
-		echom printf("Found '%s' class symbol of '%s' namespace definition at '%s' file.", a:symbol, a:symbol_namespace, class_file)
-		if class_file != '' && filereadable(class_file)
-			" Class or interface found in class_file
-			"call s:readfileToTmpbuffer(class_file)
-			silent! e class_file
-
-			call search('\c\(interface\|class\)\_s\+\zs\<'.search_symbol.'\(\>\|$\)', 'wc')
-
-			let line = line('.')
-			let col  = col('.')
-			"silent! exe 'bw! %'
-			return [class_file, line, col]
+		" It could be a class or interface.
+		let source_file = phpcomplete#GetClassLocation(a:symbol, a:symbol_namespace)
+		echom printf("Found '%s' class symbol of '%s' namespace definition at '%s' file.", a:symbol, a:symbol_namespace, source_file)
+		if source_file != ''
+			return [source_file, a:symbol]
 		endif
 	endif
 
