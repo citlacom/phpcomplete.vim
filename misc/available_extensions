@@ -3,6 +3,7 @@ Available function extensions:
 	strings
 	apache
 	apc
+	apcu
 	apd
 	arrays
 	php_options_info
@@ -19,7 +20,6 @@ Available function extensions:
 	bzip2
 	cairo
 	calendar
-	spplus
 	function_handling
 	chdb
 	directories
@@ -40,6 +40,7 @@ Available function extensions:
 	db_
 	dbx
 	error_handling
+	zlib
 	direct_io
 	dom
 	eio
@@ -69,9 +70,7 @@ Available function extensions:
 	gopher
 	intl
 	gupnp
-	zlib
 	hash
-	http
 	hyperwave_api
 	firebird_interbase
 	iconv
@@ -99,11 +98,12 @@ Available function extensions:
 	memcache
 	mhash
 	ming
+	vendor_specific_database_extensions
 	mqseries
 	msession
 	msql
 	mssql
-	mysql
+	mysql_original
 	mysqli
 	mysqlnd_memcache
 	mysqlnd_ms
@@ -130,6 +130,7 @@ Available function extensions:
 	pspell
 	paradox
 	radius
+	csprng
 	rar
 	readline
 	recode
@@ -157,6 +158,7 @@ Available function extensions:
 	tokenizer
 	trader
 	mnogosearch
+	ui
 	uopz
 	xml_parser
 	vpopmail
@@ -177,7 +179,9 @@ Available function extensions:
 Available Class extensions:
 	oci8
 	apc
+	apcu
 	spl
+	predefined_exceptions
 	cairo
 	chdb
 	predefined_interfaces_and_classes
@@ -187,7 +191,7 @@ Available Class extensions:
 	date_time
 	directories
 	dom
-	predefined_exceptions
+	data_structures
 	ev
 	event
 	fann
@@ -198,7 +202,6 @@ Available Class extensions:
 	gmp
 	haru
 	hrtime
-	http
 	imagemagick
 	judy
 	ktaglib
@@ -208,9 +211,11 @@ Available Class extensions:
 	memcache
 	memcached
 	mongo
+	vendor_specific_database_extensions
 	mysqli
 	mysqlnd_uh
 	oauth
+	parle
 	pdo
 	phar
 	streams
@@ -232,6 +237,7 @@ Available Class extensions:
 	sync
 	tidy
 	tokyo_tyrant
+	ui
 	v8js
 	varnish
 	weakref
@@ -242,17 +248,23 @@ Available Class extensions:
 	yar
 	zip
 	0mq_messaging
+	zookeeper
 
 Available Interface extensions:
 	predefined_interfaces_and_classes
+	pthreads
 	spl
 	date_time
+	data_structures
 	json
+	mongo
+	vendor_specific_database_extensions
 	reflection
 
 Available Constant extensions:
 	common
 	apc
+	apcu
 	apd
 	arrays
 	bbcode
@@ -269,8 +281,8 @@ Available Constant extensions:
 	mysqli
 	oauth
 	rar
-	snmp
 	spl
+	snmp
 	tidy
 	classkit
 	unknow
@@ -278,11 +290,13 @@ Available Constant extensions:
 	newt
 	context_options_and_parameters
 	cyrus
+	dbase
 	db_
 	direct_io
 	directories
 	dom
 	eio
+	enchant
 	exif
 	expect
 	fann
@@ -301,16 +315,16 @@ Available Constant extensions:
 	error_handling
 	math
 	network
+	zlib
 	posix_regex
 	libevent
 	gmp
 	gnupg
 	gupnp
-	zlib
 	hash
 	urls
-	http
 	firebird_interbase
+	iconv
 	id3
 	intl
 	informix
@@ -324,10 +338,11 @@ Available Constant extensions:
 	maxdb
 	multibyte_string
 	mcrypt
+	vendor_specific_database_extensions
 	semaphore
 	msql
 	mssql
-	mysql
+	mysql_original
 	mysqlnd_ms
 	mysqlnd_qc
 	ncurses
@@ -345,6 +360,7 @@ Available Constant extensions:
 	pspell
 	paradox
 	radius
+	csprng
 	runkit
 	sessions
 	variable_handling
@@ -355,6 +371,7 @@ Available Constant extensions:
 	ssh2
 	streams
 	svn
+	tokenizer
 	mnogosearch
 	win32service
 	xattr
@@ -366,7 +383,6 @@ Available Constant extensions:
 	geoip
 	hyperwave_api
 	ibm_db2
-	iconv
 	iis
 	imagemagick
 	phpini_directives
@@ -382,6 +398,9 @@ Available Constant extensions:
 	migrating_from_php_53x_to_php_54x
 	migrating_from_php_54x_to_php_55x
 	migrating_from_php_55x_to_php_56x
+	migrating_from_php_56x_to_php_70x
+	migrating_from_php_70x_to_php_71x
+	migrating_from_php_71x_to_php_72x
 	ming
 	mongo
 	mysqlnd_memcache
@@ -398,6 +417,7 @@ Available Constant extensions:
 	mysql_pdo
 	odbc_and_db2_pdo
 	ms_sql_server_pdo
+	reflection
 	list_of_reserved_words
 	rpm_reader
 	sam

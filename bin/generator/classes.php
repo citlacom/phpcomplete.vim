@@ -133,7 +133,7 @@ function handle_method_def($xpath, $classname, $node, $file) {
         var_dump($name);
         var_dump($xpath->document->saveHTML($node));
         fwrite(STDERR, "\nextraction error, cant find return type in $file\n");
-        exit;
+        return;
     }
     $re['return_type'] = $type->length ? trim($type->item(0)->textContent) : null;
 
