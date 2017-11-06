@@ -3054,7 +3054,7 @@ let g:phpcomplete_builtin['functions']['mssql'] = {
 \ 'mssql_rows_affected(': 'resource $link_identifier | int',
 \ 'mssql_select_db(': 'string $database_name [, resource $link_identifier] | bool',
 \ }
-let g:phpcomplete_builtin['functions']['mysql_original'] = {
+let g:phpcomplete_builtin['functions']['mysql'] = {
 \ 'mysql_affected_rows(': '[ resource $link_identifier = NULL] | int',
 \ 'mysql_client_encoding(': '[ resource $link_identifier = NULL] | string',
 \ 'mysql_close(': '[ resource $link_identifier = NULL] | bool',
@@ -21362,7 +21362,7 @@ let g:phpcomplete_builtin['constants']['mssql'] = {
 \ 'MSSQL_NUM': '',
 \ 'MSSQL_BOTH': '',
 \ }
-let g:phpcomplete_builtin['constants']['mysql_original'] = {
+let g:phpcomplete_builtin['constants']['mysql'] = {
 \ 'MYSQL_CLIENT_SSL': '',
 \ 'MYSQL_CLIENT_COMPRESS': '',
 \ 'MYSQL_CLIENT_IGNORE_SPACE': '',
